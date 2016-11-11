@@ -2,7 +2,6 @@ package com.example.rainy.internetrequestdemo.app;
 
 import android.app.Application;
 
-import com.yanzhenjie.nohttp.OkHttpNetworkExecutor;
 import com.yolanda.nohttp.Logger;
 import com.yolanda.nohttp.NoHttp;
 import com.yolanda.nohttp.URLConnectionNetworkExecutor;
