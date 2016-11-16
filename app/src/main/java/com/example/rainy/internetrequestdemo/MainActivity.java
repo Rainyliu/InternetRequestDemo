@@ -8,10 +8,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.rainy.internetrequestdemo.server.CallServer;
 import com.example.rainy.internetrequestdemo.utils.WaitDialog;
 import com.yolanda.nohttp.Headers;
 import com.yolanda.nohttp.Logger;
 import com.yolanda.nohttp.NoHttp;
+import com.yolanda.nohttp.Priority;
 import com.yolanda.nohttp.RequestMethod;
 import com.yolanda.nohttp.error.NetworkError;
 import com.yolanda.nohttp.error.NotFoundCacheError;
@@ -31,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String IMAGE_URL = "http://pics.sc.chinaz.com/files/pic/pic9/201508/apic14052.jpg";
     private static final int NOHTTP_WHAT_TEST = 0x001;
     private ImageView iv;
+    private Request<Bitmap> request = null;
     /**
      * 请求队列
      */
@@ -50,12 +53,12 @@ public class MainActivity extends AppCompatActivity {
 
         // 创建请求队列, 默认并发3个请求,传入你想要的数字可以改变默认并发数, 例如NoHttp.newRequestQueue(1)。
         // 不过正式的项目中不要每次请求时都创建队列，应该把队列封装成单例模式，这样才能把队列的优点发挥出来。
-        requestQueue = NoHttp.newRequestQueue();
+        requestQueue = NoHttp.newRequestQueue(1);//传入并发值，说明一次只会执行一个请求
     }
 
     public void click(View v){
         //创建请求对象
-        Request<Bitmap> request = NoHttp.createImageRequest(IMAGE_URL, RequestMethod.GET);
+        request = NoHttp.createImageRequest(IMAGE_URL, RequestMethod.GET);
 
         //添加请求参数
         request.add("userName", "rainy") // String型。
@@ -80,14 +83,29 @@ public class MainActivity extends AppCompatActivity {
                 // 设置一个tag, 在请求完(失败/成功)时原封不动返回; 多数情况下不需要。
                 .setTag(this)
                 // 设置取消标志。
-                .setCancelSign(this);
+                .setCancelSign(this)
+                /**
+                 * NoHttp有以下四个优先级别，默认请求的优先级别是DEFAULT
+                 *
+                 * HIGHEST  优先级别最高，一般用于队列中有HEIGHT的请求时，需要立即执行的请求
+                 * HEIGHT   优先级别高，低于HIGHEST
+                 * DEFAULT  默认值，低于HEIGHT
+                 * LOW      优先级最低
+                 */
+                .setPriority(Priority.HIGHEST);//设置请求优先级
+
 
         /*
          * what: 当多个请求同时使用同一个OnResponseListener时用来区分请求, 类似handler的what一样。
 		 * request: 请求对象。
 		 * onResponseListener 回调对象，接受请求结果。
+		 *
+		 * 没有封装的队列
 		 */
-        requestQueue.add(NOHTTP_WHAT_TEST, request, onResponseListener);
+//        requestQueue.add(NOHTTP_WHAT_TEST, request, onResponseListener);
+
+        //使用封装的requestQueue去请求接口
+        CallServer.getInstance().add(NOHTTP_WHAT_TEST,request,onResponseListener);
     }
 
     private OnResponseListener<Bitmap> onResponseListener = new OnResponseListener<Bitmap>() {
@@ -163,5 +181,10 @@ public class MainActivity extends AppCompatActivity {
             requestQueue.cancelBySign(this);
         }
         super.onDestroy();
+
+        //退出时取消单个请求
+        if(request != null){
+            request.cancel();
+        }
     }
 }
