@@ -33,4 +33,7 @@ dependencies {
     //如果要使用OkHttp作为网络层，请再依赖：
     compile 'com.yanzhenjie.nohttp:okhttp:1.1.0'
 
+    //rxjava依赖
+    compile 'io.reactivex:rxjava:1.0.10'
+
 }
