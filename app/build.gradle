@@ -34,6 +34,8 @@ dependencies {
     compile 'com.yanzhenjie.nohttp:okhttp:1.1.0'
 
     //rxjava依赖
-    compile 'io.reactivex:rxjava:1.0.10'
+    compile 'io.reactivex:rxjava:1.0.14'
+    //rxAndroid依赖
+    compile 'io.reactivex:rxandroid:1.0.1'
 
 }
