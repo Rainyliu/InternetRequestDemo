@@ -24,6 +24,7 @@ import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
@@ -66,7 +67,8 @@ public class RxjavaActivity extends AppCompatActivity {
 //        mapDemo();
 //        flaMapDemo();
 //        flaMapDemo1();
-        flaMapDemo2();
+//        flaMapDemo2();
+        liftDemo();
         Log.d("mtag","回到按钮点击事件中==========="+Thread.currentThread().getName());
     }
 
@@ -473,6 +475,114 @@ public class RxjavaActivity extends AppCompatActivity {
      * 妈妈再也不怕我的用户手抖点开两个重复的界面啦。
      */
 
+
+    /**
+     * 变换的原理 lift()
+     *
+     * 实质：针对事件序列的处理和再发送
+     *有点像一种代理机制，通过事件拦截和处理实现事件序列的变换。
+     * demo：Integer转换成String
+     */
+    public void liftDemo(){
+        Observable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>() {
+            @Override
+            public void call(Subscriber<? super Integer> subscriber) {
+                Log.d("mtag","创建了一个观察者");
+            }
+        });
+        observable.lift(new Observable.Operator<String,Integer>() {
+            @Override
+            public Subscriber<? super Integer> call(final Subscriber<? super String> subscriber) {
+                // 将事件序列中的 Integer 对象转换为 String 对象
+                return new Subscriber<Integer>() {
+                    @Override
+                    public void onCompleted() {
+                        subscriber.onCompleted();
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        subscriber.onError(e);
+                    }
+
+                    @Override
+                    public void onNext(Integer integer) {
+                        subscriber.onNext("" + integer);
+                    }
+                };
+            }
+        });
+    }
+
+    /**
+     * compose: 对 Observable 整体的变换
+     * compose(Transformer)
+     * lift() 是针对事件项和事件序列的，而 compose() 是针对 Observable 自身进行变换
+     *
+     */
+    public class LiftAllTransformer implements Observable.Transformer<Integer,String>{
+
+        @Override
+        public Observable<String> call(Observable<Integer> observable) {
+            return null;
+//            observable
+//                    .lift1()
+//                    .lift2()
+//                    .lift3()
+//                    .lift4();
+        }
+
+    }
+
+//    Transformer liftAll = new LiftAllTransformer();
+//    observable1.compose(liftAll).subscribe(subscriber1);
+//    observable2.compose(liftAll).subscribe(subscriber2);
+//    observable3.compose(liftAll).subscribe(subscriber3);
+//    observable4.compose(liftAll).subscribe(subscriber4);
+
+
+    /**
+     * 线程控制：Scheduler (二)
+     * observeOn()指定的是它之后的操作所在的线程
+     * observeOn() 可以多次调用，程序实现了线程的多次切换。
+     * subscribeOn()制定的是它之前的操作所在的线程
+     * subscribeOn() 的位置放在哪里都可以，但它是只能调用一次的。(subscribeOn可以多个混合使用)
+     *因此如果有多次切换线程的需求，只要在每个想要切换线程的位置调用一次 observeOn() 即可
+     */
+    public void rxJavaScheduler2(){
+        Observable.just(1,2,3,4)// IO 线程，由 subscribeOn() 指定
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.newThread())
+//                .map(mapOperator)// 新线程，由 observeOn() 指定
+                .observeOn(Schedulers.io())
+//                .map(mapOperator2)// IO 线程，由 observeOn() 指定
+                .observeOn(AndroidSchedulers.mainThread());
+//                .subscribe(subscriber);// Android 主线程，由 observeOn() 指定
+    }
+
+    /**
+     * doOnSubscribe()
+     * Subscriber 的 onStart() 可以用作流程开始前的初始化，
+     * 但是在subscribe() 发生时就被调用了，因此不能指定线程而是只能执行在 subscribe() 被调用时的线程
+     *
+     * Observable.doOnSubscribe()
+     * 它和 Subscriber.onStart() 同样是在 subscribe() 调用后而且在事件发送前执行，
+     * 但区别在于它可以指定线程。默认情况下， doOnSubscribe() 执行在 subscribe() 发生的线程；
+     * 而如果在 doOnSubscribe() 之后有 subscribeOn() 的话，它将执行在离它最近的 subscribeOn() 所指定的线程。
+     */
+    public void doOnSubscribeDemo(){
+//        Observable.create(onSubscribe)
+//                .subscribeOn(Schedulers.io())
+//                .doOnSubscribe(new Action0() {
+//                    @Override
+//                    public void call() {
+//                        progressBar.setVisibility(View.VISIBLE); // 需要在主线程执行
+//                    }
+//                })
+//                .subscribeOn(AndroidSchedulers.mainThread())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(subscriber);
+    }
 
 
     /**
